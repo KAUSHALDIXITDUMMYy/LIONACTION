@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react"
 import type { OddsEvent, Bookmaker } from "@/lib/odds-types"
 import { SPORTSBOOKS, SPORTSBOOK_LOGOS, TEAM_LOGOS } from "@/lib/odds-types"
+import { formatOdds } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { ChevronDown } from "lucide-react"
@@ -131,9 +132,7 @@ export function OddsTable({ events, selectedMarket }: OddsTableProps) {
                         <div key={idx} className="text-right">
                           <div className="text-xs text-muted-foreground">{outcome.name}</div>
                           <div className="font-semibold text-accent">
-                            {selectedMarket === "spreads" || selectedMarket === "totals"
-                              ? `${outcome.point !== undefined ? (outcome.point > 0 ? "+" : "") + outcome.point.toFixed(1) + " " : ""}${outcome.price.toFixed(2)}`
-                              : outcome.price.toFixed(2)}
+                            {formatOdds(outcome.price, selectedMarket, outcome.point)}
                           </div>
                         </div>
                       ))}
@@ -187,9 +186,7 @@ export function OddsTable({ events, selectedMarket }: OddsTableProps) {
                                     key={idx}
                                     className="text-center py-3 px-3 font-semibold text-accent bg-accent/5 rounded"
                                   >
-                                    {selectedMarket === "spreads" || selectedMarket === "totals"
-                                      ? `${outcome.point !== undefined ? (outcome.point > 0 ? "+" : "") + outcome.point.toFixed(1) + " " : ""}${outcome.price.toFixed(2)}`
-                                      : outcome.price.toFixed(2)}
+                                    {formatOdds(outcome.price, selectedMarket, outcome.point)}
                                   </td>
                                 ))}
                               </tr>

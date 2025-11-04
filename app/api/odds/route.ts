@@ -25,32 +25,41 @@ function generateMockOdds(events: any[]): any[] {
               ...book,
               markets: book.markets.map((market: any) => {
                 if (market.key === "h2h") {
-                  // Home and Away odds
+                  // Home and Away odds in American format
+                  // Generate random decimal odds first, then convert to American
+                  const awayDecimal = Math.round((1.8 + Math.random() * 0.4) * 100) / 100
+                  const homeDecimal = Math.round((1.8 + Math.random() * 0.4) * 100) / 100
+                  const awayAmerican = awayDecimal >= 2.0 
+                    ? Math.round((awayDecimal - 1) * 100) 
+                    : Math.round(-100 / (awayDecimal - 1))
+                  const homeAmerican = homeDecimal >= 2.0 
+                    ? Math.round((homeDecimal - 1) * 100) 
+                    : Math.round(-100 / (homeDecimal - 1))
                   return {
                     ...market,
                     outcomes: [
-                      { name: event.away_team, price: Math.round((1.8 + Math.random() * 0.4) * 100) / 100 },
-                      { name: event.home_team, price: Math.round((1.8 + Math.random() * 0.4) * 100) / 100 },
+                      { name: event.away_team, price: awayAmerican },
+                      { name: event.home_team, price: homeAmerican },
                     ],
                   }
                 } else if (market.key === "spreads") {
-                  // Spread odds
+                  // Spread odds in American format (-110 is standard)
                   const spread = Math.round((Math.random() * 10 - 5) * 10) / 10
                   return {
                     ...market,
                     outcomes: [
-                      { name: event.away_team, price: 1.91, point: spread },
-                      { name: event.home_team, price: 1.91, point: -spread },
+                      { name: event.away_team, price: -110, point: spread },
+                      { name: event.home_team, price: -110, point: -spread },
                     ],
                   }
                 } else if (market.key === "totals") {
-                  // Totals/Over-Under odds
+                  // Totals/Over-Under odds in American format (-110 is standard)
                   const total = Math.round((45 + Math.random() * 20) * 10) / 10
                   return {
                     ...market,
                     outcomes: [
-                      { name: "Over", price: 1.91, point: total },
-                      { name: "Under", price: 1.91, point: total },
+                      { name: "Over", price: -110, point: total },
+                      { name: "Under", price: -110, point: total },
                     ],
                   }
                 }
@@ -67,7 +76,7 @@ function generateMockOdds(events: any[]): any[] {
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const sport = searchParams.get("sport") || "americanfootball_nfl"
-  const oddsFormat = "decimal"
+  const oddsFormat = "american"
 
   try {
     const bookmakers = ["draftkings", "fanduel", "betmgm", "espnbet", "pointsbetus", "caesars", "bet365"].join(",")
