@@ -65,6 +65,11 @@ class OddsService {
    * Implements cache-first strategy with request deduplication
    */
   async getOdds(sport: string): Promise<OddsEvent[]> {
+    // Validate sport parameter
+    if (!sport || typeof sport !== 'string') {
+      throw new Error('Invalid sport parameter')
+    }
+
     // Check cache first
     const cached = cacheService.get(sport)
     if (cached) {
@@ -73,20 +78,36 @@ class OddsService {
     }
 
     // Use request deduplication to prevent concurrent requests
-    const data = await requestDeduplicationService.getOrCreateRequest(
-      sport,
-      async () => {
-        // Fetch from API
-        const rawData = await this.fetchOddsFromAPI(sport)
-        // Process data (apply mock generation if needed)
-        const processedData = this.processOddsData(rawData)
-        // Store in cache
-        cacheService.set(sport, processedData)
-        return processedData
-      }
-    )
+    try {
+      const data = await requestDeduplicationService.getOrCreateRequest(
+        sport,
+        async () => {
+          // Fetch from API
+          const rawData = await this.fetchOddsFromAPI(sport)
+          // Process data (apply mock generation if needed)
+          const processedData = this.processOddsData(rawData)
+          // Store in cache (non-blocking - don't fail if cache fails)
+          try {
+            cacheService.set(sport, processedData)
+          } catch (cacheError) {
+            logger.warn('Failed to cache odds data', {
+              sport,
+              error: cacheError instanceof Error ? cacheError.message : 'Unknown error',
+            })
+            // Continue even if caching fails
+          }
+          return processedData
+        }
+      )
 
-    return data
+      return data
+    } catch (error) {
+      logger.error('Failed to get odds', {
+        sport,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      })
+      throw error
+    }
   }
 }
 
