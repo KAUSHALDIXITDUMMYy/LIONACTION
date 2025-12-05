@@ -1,16 +1,66 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import type { OddsEvent, Bookmaker } from "@/lib/odds-types"
+import type { OddsEvent, Bookmaker, OddsMarket } from "@/lib/odds-types"
 import { SPORTSBOOKS, SPORTSBOOK_LOGOS, TEAM_LOGOS } from "@/lib/odds-types"
 import { formatOdds } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { ChevronDown } from "lucide-react"
+import { Star, Flame } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { format } from "date-fns"
 
 interface OddsTableProps {
   events: OddsEvent[]
   selectedMarket: string
+}
+
+interface BestOdds {
+  outcome1: { price: number; point?: number; bookmaker: string }
+  outcome2: { price: number; point?: number; bookmaker: string }
+}
+
+function findBestOdds(
+  bookmakers: Bookmaker[] | undefined,
+  marketKey: string,
+  selectedBookmakers: Set<string>
+): BestOdds | null {
+  if (!bookmakers) return null
+
+  let bestOutcome1: { price: number; point?: number; bookmaker: string } | null = null
+  let bestOutcome2: { price: number; point?: number; bookmaker: string } | null = null
+
+  bookmakers.forEach((book) => {
+    if (!selectedBookmakers.has(book.key)) return
+
+    const market = book.markets?.find((m) => m.key === marketKey)
+    if (!market?.outcomes || market.outcomes.length < 2) return
+
+    const outcome1 = market.outcomes[0]
+    const outcome2 = market.outcomes[1]
+
+    // For American odds: higher positive or less negative is better
+    // For spreads/totals, we compare the price (odds)
+    if (!bestOutcome1 || outcome1.price > bestOutcome1.price) {
+      bestOutcome1 = {
+        price: outcome1.price,
+        point: outcome1.point,
+        bookmaker: book.key,
+      }
+    }
+
+    if (!bestOutcome2 || outcome2.price > bestOutcome2.price) {
+      bestOutcome2 = {
+        price: outcome2.price,
+        point: outcome2.point,
+        bookmaker: book.key,
+      }
+    }
+  })
+
+  if (!bestOutcome1 || !bestOutcome2) return null
+
+  return { outcome1: bestOutcome1, outcome2: bestOutcome2 }
 }
 
 export function OddsTable({ events, selectedMarket }: OddsTableProps) {
@@ -50,25 +100,18 @@ export function OddsTable({ events, selectedMarket }: OddsTableProps) {
     })
   }, [events, selectedMarket, selectedBookmakers])
 
-  const getOddsForMarket = (bookmakers: Bookmaker[] | undefined, marketKey: string) => {
-    if (!bookmakers) return null
-
-    for (const book of bookmakers) {
-      if (!selectedBookmakers.has(book.key)) continue
-
-      const market = book.markets?.find((m) => m.key === marketKey)
-      if (market?.outcomes) {
-        return { bookmaker: book, market }
-      }
-    }
-    return null
+  const getOpeningOdds = (bookmakers: Bookmaker[] | undefined, marketKey: string): OddsMarket | null => {
+    if (!bookmakers || bookmakers.length === 0) return null
+    // Use first bookmaker as opening odds (in real app, this would track historical data)
+    const firstBook = bookmakers[0]
+    return firstBook.markets?.find((m) => m.key === marketKey) || null
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Sportsbook Filter */}
-      <Card className="p-4">
-        <h3 className="font-semibold mb-3">Select Sportsbooks</h3>
+      <Card className="p-3 sm:p-4">
+        <h3 className="font-semibold mb-2 sm:mb-3 text-sm sm:text-base">Select Sportsbooks</h3>
         <div className="flex flex-wrap gap-2">
           {availableSportsbooks.map((key) => {
             const book = SPORTSBOOKS[key as keyof typeof SPORTSBOOKS]
@@ -95,103 +138,230 @@ export function OddsTable({ events, selectedMarket }: OddsTableProps) {
       <div className="space-y-3">
         {filteredEvents.map((event) => {
           const isExpanded = expandedGame === event.id
-          const oddsData = getOddsForMarket(event.bookmakers, selectedMarket)
+          const bestOdds = findBestOdds(event.bookmakers, selectedMarket, selectedBookmakers)
+          const openingOdds = getOpeningOdds(event.bookmakers, selectedMarket)
 
           return (
             <Card key={event.id} className="overflow-hidden">
-              {/* Game Header */}
+              {/* Game Header - Collapsed View */}
               <button
                 onClick={() => setExpandedGame(isExpanded ? null : event.id)}
-                className="w-full px-6 py-4 flex items-center justify-between hover:bg-card/80 transition-colors"
+                className="w-full px-3 sm:px-4 md:px-6 py-3 sm:py-4 flex items-center justify-between hover:bg-card/80 transition-colors"
               >
-                <div className="flex items-center gap-4 flex-1 text-left">
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl">{TEAM_LOGOS[event.away_team] || "🏀"}</span>
-                    <span className="text-2xl">{TEAM_LOGOS[event.home_team] || "🏀"}</span>
+                <div className="flex items-center gap-2 sm:gap-4 flex-1 text-left min-w-0">
+                  <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                    <span className="text-xl sm:text-2xl">{TEAM_LOGOS[event.away_team] || "🏀"}</span>
+                    <span className="text-xl sm:text-2xl">{TEAM_LOGOS[event.home_team] || "🏀"}</span>
                   </div>
 
-                  <div className="flex-1">
-                    <div className="font-semibold text-lg">
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-sm sm:text-base md:text-lg truncate">
                       {event.away_team} @ {event.home_team}
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                      {new Date(event.commence_time).toLocaleString(undefined, {
-                        weekday: "short",
-                        month: "short",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                    <div className="text-xs sm:text-sm text-muted-foreground">
+                      {format(new Date(event.commence_time), "EEE M/d, h:mm a")}
                     </div>
                   </div>
-
-                  {/* Quick View - Best Odds */}
-                  {oddsData && (
-                    <div className="hidden md:flex items-center gap-4">
-                      {oddsData.market.outcomes.map((outcome, idx) => (
-                        <div key={idx} className="text-right">
-                          <div className="text-xs text-muted-foreground">{outcome.name}</div>
-                          <div className="font-semibold text-accent">
-                            {formatOdds(outcome.price, selectedMarket, outcome.point)}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
-
-                <ChevronDown className={`w-5 h-5 transition-transform ${isExpanded ? "transform rotate-180" : ""}`} />
               </button>
 
               {/* Expanded Odds Table */}
               {isExpanded && (
-                <div className="border-t border-border px-6 py-4 bg-card/50">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
+                <div className="border-t border-border bg-card/50">
+                  <div className="overflow-x-auto -mx-3 sm:mx-0">
+                    <table className="w-full text-xs sm:text-sm min-w-[600px]">
                       <thead>
-                        <tr className="border-b border-border">
-                          <th className="text-left py-2 px-3 font-semibold">Sportsbook</th>
-                          {selectedMarket === "totals" ? (
-                            <>
-                              <th className="text-center py-2 px-3 font-semibold">Over</th>
-                              <th className="text-center py-2 px-3 font-semibold">Under</th>
-                            </>
-                          ) : (
-                            <>
-                              <th className="text-center py-2 px-3 font-semibold">
-                                {selectedMarket === "h2h" ? event.away_team : selectedMarket === "spreads" ? event.away_team : "Option 1"}
+                        <tr className="border-b border-border bg-card">
+                          <th className="text-left py-2 sm:py-3 px-2 sm:px-4 font-semibold text-xs sm:text-sm">SCHEDULED</th>
+                          <th className="text-center py-2 sm:py-3 px-2 sm:px-4 font-semibold text-xs sm:text-sm">OPEN</th>
+                          <th className="text-center py-2 sm:py-3 px-2 sm:px-4 font-semibold text-xs sm:text-sm">BEST ODDS</th>
+                          {availableSportsbooks
+                            .filter((key) => selectedBookmakers.has(key))
+                            .map((key) => (
+                              <th key={key} className="text-center py-2 sm:py-3 px-2 sm:px-4 font-semibold text-xs sm:text-sm">
+                                <div className="flex items-center justify-center gap-1">
+                                  <span className="text-sm sm:text-base">{SPORTSBOOK_LOGOS[key] || "📱"}</span>
+                                  <span className="text-xs hidden sm:inline">{SPORTSBOOKS[key as keyof typeof SPORTSBOOKS]?.title || ""}</span>
+                                </div>
                               </th>
-                              <th className="text-center py-2 px-3 font-semibold">
-                                {selectedMarket === "h2h" ? event.home_team : selectedMarket === "spreads" ? event.home_team : "Option 2"}
-                              </th>
-                            </>
-                          )}
+                            ))}
                         </tr>
                       </thead>
                       <tbody>
-                        {event.bookmakers
-                          ?.filter((book) => selectedBookmakers.has(book.key))
-                          .map((book) => {
-                            const market = book.markets?.find((m) => m.key === selectedMarket)
-                            if (!market?.outcomes) return null
+                        {/* Away Team Row */}
+                        <tr className="border-b border-border hover:bg-card/50 transition-colors">
+                          <td className="py-2 sm:py-3 md:py-4 px-2 sm:px-4">
+                            <div className="flex items-center gap-1 sm:gap-2">
+                              <span className="text-base sm:text-lg flex-shrink-0">{TEAM_LOGOS[event.away_team] || "🏀"}</span>
+                              <div className="min-w-0">
+                                <div className="font-medium text-xs sm:text-sm truncate">{event.away_team}</div>
+                                <div className="text-xs text-muted-foreground hidden sm:block">({event.id})</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="text-center py-2 sm:py-3 md:py-4 px-2 sm:px-4 text-muted-foreground text-xs sm:text-sm">
+                            {openingOdds?.outcomes?.[0] ? (
+                              <>
+                                {selectedMarket === "spreads" || selectedMarket === "totals" ? (
+                                  <>
+                                    {openingOdds.outcomes[0].point !== undefined
+                                      ? `${openingOdds.outcomes[0].point > 0 ? "+" : ""}${openingOdds.outcomes[0].point.toFixed(1)}`
+                                      : ""}
+                                    , {formatOdds(openingOdds.outcomes[0].price, selectedMarket)}
+                                  </>
+                                ) : (
+                                  formatOdds(openingOdds.outcomes[0].price, selectedMarket)
+                                )}
+                              </>
+                            ) : (
+                              "-"
+                            )}
+                          </td>
+                          <td className="text-center py-2 sm:py-3 md:py-4 px-2 sm:px-4">
+                            {bestOdds?.outcome1 ? (
+                              <div className="flex items-center justify-center gap-1">
+                                <span className="font-semibold text-accent text-xs sm:text-sm">
+                                  {formatOdds(bestOdds.outcome1.price, selectedMarket, bestOdds.outcome1.point)}
+                                </span>
+                                <Star className="w-3 h-3 sm:w-4 sm:h-4 text-accent fill-accent flex-shrink-0" />
+                              </div>
+                            ) : (
+                              "-"
+                            )}
+                          </td>
+                          {availableSportsbooks
+                            .filter((key) => selectedBookmakers.has(key))
+                            .map((key) => {
+                              const book = event.bookmakers?.find((b) => b.key === key)
+                              const market = book?.markets?.find((m) => m.key === selectedMarket)
+                              const outcome = market?.outcomes?.[0]
+                              const isBest =
+                                bestOdds?.outcome1 &&
+                                book?.key === bestOdds.outcome1.bookmaker &&
+                                outcome?.price === bestOdds.outcome1.price
 
-                            return (
-                              <tr key={book.key} className="border-b border-border hover:bg-card transition-colors">
-                                <td className="py-3 px-3 font-medium">
-                                  <span className="mr-1">{SPORTSBOOK_LOGOS[book.key] || "📱"}</span>
-                                  {SPORTSBOOKS[book.key as keyof typeof SPORTSBOOKS]?.title || book.title}
+                              return (
+                                <td
+                                  key={key}
+                                  className={cn(
+                                    "text-center py-2 sm:py-3 md:py-4 px-2 sm:px-4 font-semibold text-xs sm:text-sm",
+                                    isBest && "bg-accent/20 text-accent"
+                                  )}
+                                >
+                                  {outcome ? (
+                                    <div className="flex items-center justify-center gap-1">
+                                      <span className="text-xs sm:text-sm">{formatOdds(outcome.price, selectedMarket, outcome.point)}</span>
+                                      {isBest && <Star className="w-3 h-3 sm:w-4 sm:h-4 text-accent fill-accent flex-shrink-0" />}
+                                    </div>
+                                  ) : (
+                                    "-"
+                                  )}
                                 </td>
-                                {market.outcomes.map((outcome, idx) => (
-                                  <td
-                                    key={idx}
-                                    className="text-center py-3 px-3 font-semibold text-accent bg-accent/5 rounded"
-                                  >
-                                    {formatOdds(outcome.price, selectedMarket, outcome.point)}
+                              )
+                            })}
+                        </tr>
+
+                        {/* Home Team Row */}
+                        <tr className="border-b border-border hover:bg-card/50 transition-colors">
+                          <td className="py-2 sm:py-3 md:py-4 px-2 sm:px-4">
+                            <div className="flex items-center gap-1 sm:gap-2">
+                              <span className="text-base sm:text-lg flex-shrink-0">{TEAM_LOGOS[event.home_team] || "🏀"}</span>
+                              <div className="min-w-0">
+                                <div className="font-medium text-xs sm:text-sm truncate">{event.home_team}</div>
+                                <div className="text-xs text-muted-foreground hidden sm:block">({event.id})</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="text-center py-2 sm:py-3 md:py-4 px-2 sm:px-4 text-muted-foreground text-xs sm:text-sm">
+                            {openingOdds?.outcomes?.[1] ? (
+                              <>
+                                {selectedMarket === "spreads" || selectedMarket === "totals" ? (
+                                  <>
+                                    {openingOdds.outcomes[1].point !== undefined
+                                      ? `${openingOdds.outcomes[1].point > 0 ? "+" : ""}${openingOdds.outcomes[1].point.toFixed(1)}`
+                                      : ""}
+                                    , {formatOdds(openingOdds.outcomes[1].price, selectedMarket)}
+                                  </>
+                                ) : (
+                                  formatOdds(openingOdds.outcomes[1].price, selectedMarket)
+                                )}
+                              </>
+                            ) : (
+                              "-"
+                            )}
+                          </td>
+                          <td className="text-center py-2 sm:py-3 md:py-4 px-2 sm:px-4">
+                            {bestOdds?.outcome2 ? (
+                              <div className="flex items-center justify-center gap-1">
+                                <span className="font-semibold text-accent text-xs sm:text-sm">
+                                  {formatOdds(bestOdds.outcome2.price, selectedMarket, bestOdds.outcome2.point)}
+                                </span>
+                                <Star className="w-3 h-3 sm:w-4 sm:h-4 text-accent fill-accent flex-shrink-0" />
+                                {selectedMarket === "h2h" && <Flame className="w-3 h-3 text-orange-500 flex-shrink-0" />}
+                              </div>
+                            ) : (
+                              "-"
+                            )}
+                          </td>
+                          {availableSportsbooks
+                            .filter((key) => selectedBookmakers.has(key))
+                            .map((key) => {
+                              const book = event.bookmakers?.find((b) => b.key === key)
+                              const market = book?.markets?.find((m) => m.key === selectedMarket)
+                              const outcome = market?.outcomes?.[1] || market?.outcomes?.[0] // For totals, use first outcome for "Over"
+                              const isBest =
+                                bestOdds?.outcome2 &&
+                                book?.key === bestOdds.outcome2.bookmaker &&
+                                outcome?.price === bestOdds.outcome2.price
+
+                              return (
+                                <td
+                                  key={key}
+                                  className={cn(
+                                    "text-center py-2 sm:py-3 md:py-4 px-2 sm:px-4 font-semibold text-xs sm:text-sm",
+                                    isBest && "bg-accent/20 text-accent"
+                                  )}
+                                >
+                                  {outcome ? (
+                                    <div className="flex items-center justify-center gap-1">
+                                      <span className="text-xs sm:text-sm">{formatOdds(outcome.price, selectedMarket, outcome.point)}</span>
+                                      {isBest && <Star className="w-3 h-3 sm:w-4 sm:h-4 text-accent fill-accent flex-shrink-0" />}
+                                    </div>
+                                  ) : (
+                                    "-"
+                                  )}
+                                </td>
+                              )
+                            })}
+                        </tr>
+
+                        {/* Totals Over/Under Row (if totals market) */}
+                        {selectedMarket === "totals" && openingOdds?.outcomes?.[1] && (
+                          <tr className="border-b border-border hover:bg-card/50 transition-colors">
+                            <td className="py-4 px-4">
+                              <div className="font-medium">Under</div>
+                            </td>
+                            <td className="text-center py-4 px-4 text-muted-foreground">
+                              {openingOdds?.outcomes?.[1]
+                                ? formatOdds(openingOdds.outcomes[1].price, selectedMarket, openingOdds.outcomes[1].point)
+                                : "-"}
+                            </td>
+                            <td className="text-center py-4 px-4">-</td>
+                            {availableSportsbooks
+                              .filter((key) => selectedBookmakers.has(key))
+                              .map((key) => {
+                                const book = event.bookmakers?.find((b) => b.key === key)
+                                const market = book?.markets?.find((m) => m.key === selectedMarket)
+                                const outcome = market?.outcomes?.[1]
+
+                                return (
+                                  <td key={key} className="text-center py-4 px-4 font-semibold">
+                                    {outcome ? formatOdds(outcome.price, selectedMarket, outcome.point) : "-"}
                                   </td>
-                                ))}
-                              </tr>
-                            )
-                          })}
+                                )
+                              })}
+                          </tr>
+                        )}
                       </tbody>
                     </table>
                   </div>
