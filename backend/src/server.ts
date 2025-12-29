@@ -2,6 +2,7 @@ import { createApp } from './app'
 import { env } from './config/env'
 import { logger } from './utils/logger'
 import { startOddsPoller, stopOddsPoller } from './jobs/odds-poller.job'
+import './services/database.service' // Initialize database connection
 
 const app = createApp()
 

@@ -33,6 +33,7 @@ export function errorMiddleware(
 
   res.status(statusCode).json({
     error: message,
+    message: message, // Add message field for consistency
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
   })
 }

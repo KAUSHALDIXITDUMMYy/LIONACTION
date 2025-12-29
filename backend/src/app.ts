@@ -2,6 +2,8 @@ import express, { Express, Request, Response, NextFunction } from 'express'
 import { corsMiddleware } from './middleware/cors.middleware'
 import { errorMiddleware } from './middleware/error.middleware'
 import oddsRoutes from './routes/odds.routes'
+import betsRoutes from './routes/bets.routes'
+import profileRoutes from './routes/profile.routes'
 import { logger } from './utils/logger'
 
 // Request logging middleware
@@ -58,6 +60,8 @@ export function createApp(): Express {
 
   // Routes
   app.use(oddsRoutes)
+  app.use(betsRoutes)
+  app.use(profileRoutes)
 
   // Health check endpoint with more details
   app.get('/health', (req: Request, res: Response) => {

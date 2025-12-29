@@ -1,40 +1,41 @@
 "use client"
 
 import { useState } from "react"
-import { Sidebar } from "./sidebar"
-import { Header } from "./header"
-import { Button } from "./ui/button"
-import { Menu } from "lucide-react"
-import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet"
+import { Sidebar } from "@/components/sidebar"
+import { Header } from "@/components/header"
+import { cn } from "@/lib/utils"
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
-    <div className="flex h-screen bg-background">
-      {/* Desktop Sidebar */}
-      <div className="hidden lg:block">
-        <Sidebar />
+    <div className="flex h-screen overflow-hidden bg-background">
+      {/* Mobile Sidebar Overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar - Always Fixed */}
+      <div
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 w-64 transition-transform duration-300 ease-in-out lg:translate-x-0",
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        <Sidebar onClose={() => setSidebarOpen(false)} />
       </div>
 
-      {/* Mobile Sidebar */}
-      <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-        <div className="lg:hidden fixed top-4 left-4 z-50">
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="sm" className="bg-card border border-border">
-              <Menu className="w-5 h-5" />
-            </Button>
-          </SheetTrigger>
-        </div>
-        <SheetContent side="left" className="w-64 p-0">
-          <Sidebar />
-        </SheetContent>
-      </Sheet>
-
-      <div className="flex-1 flex flex-col overflow-hidden w-full">
-        <Header />
-        <main className="flex-1 overflow-y-auto">{children}</main>
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col lg:ml-64">
+        <Header onMenuClick={() => setSidebarOpen(true)} />
+        <main className="flex-1 overflow-y-auto">
+          {children}
+        </main>
       </div>
     </div>
   )
 }
+

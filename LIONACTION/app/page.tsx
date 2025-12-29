@@ -1,202 +1,299 @@
 "use client"
-import { ProtectedRoute } from "@/components/protected-route"
+
+import Image from "next/image"
+import Link from "next/link"
+import {
+  Activity,
+  ArrowRight,
+  CalendarClock,
+  Flame,
+  Shield,
+  Sparkles,
+  Trophy,
+  TrendingDown,
+  TrendingUp,
+} from "lucide-react"
+
 import { AppLayout } from "@/components/app-layout"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { ProtectedRoute } from "@/components/protected-route"
 import { Button } from "@/components/ui/button"
-import { ArrowUp, ArrowDown } from "lucide-react"
-import { useState, useEffect } from "react"
-import type { OddsEvent } from "@/lib/odds-types"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+
+const oddsMovers = [
+  { teams: "GS Warriors vs LAL", movement: "+5.5 → +5.5", change: "+110 → +125", trend: "up" as const },
+  { teams: "NY Yankees vs BOS", movement: "Moneyline", change: "+150 → +135", trend: "down" as const },
+  { teams: "Real Madrid vs BAR", movement: "Total O/U 3.5", change: "+105 → -115", trend: "up" as const },
+]
+
+const favoriteTeams = [
+  { name: "Golden State Warriors", next: "Next match vs. Lakers" },
+  { name: "Kansas City Chiefs", next: "Next match vs. Raiders" },
+]
+
+const todaysGames = [
+  { title: "Lakers @ Celtics", detail: "Spread: -7.5 | O/U 225.5" },
+  { title: "Nets @ 76ers", detail: "Spread: -4.0 | O/U 218.0" },
+  { title: "Suns @ Mavericks", detail: "Spread: -1.5 | O/U 235.5" },
+]
 
 function HomeContent() {
-  const [featuredEvent, setFeaturedEvent] = useState<OddsEvent | null>(null)
-  const [todaysGames, setTodaysGames] = useState<OddsEvent[]>([])
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-        const response = await fetch(`${apiUrl}/api/odds?sport=americanfootball_nfl`)
-        if (response.ok) {
-          const data = await response.json()
-          if (data.data && data.data.length > 0) {
-            setFeaturedEvent(data.data[0])
-            setTodaysGames(data.data.slice(0, 3))
-          }
-        }
-      } catch (error) {
-        console.error("Failed to fetch featured odds:", error)
-      }
-    }
-    fetchData()
-  }, [])
-
   return (
     <AppLayout>
-      <div className="p-4 md:p-6">
-        <div className="mb-4 md:mb-6">
-          <h1 className="text-xl md:text-2xl font-bold mb-1">My Dashboard</h1>
-          <p className="text-sm md:text-base text-muted-foreground">Your personalized view of the latest odds</p>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-          {/* Featured Match - Large Card */}
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle>Featured Match</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {featuredEvent ? (
-                <div className="flex items-center gap-4">
-                  <div className="w-20 h-20 bg-gradient-to-br from-red-500 to-red-700 rounded-lg flex items-center justify-center text-white text-2xl">
-                    🏈
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-semibold text-lg mb-1">
-                      {featuredEvent.away_team} vs. {featuredEvent.home_team}
+      <div className="p-6 lg:p-8 space-y-6 max-w-[1800px] mx-auto">
+          <div className="grid gap-4 lg:grid-cols-3">
+            <Card className="lg:col-span-2 overflow-hidden border-border/60 bg-gradient-to-r from-[#161922] via-[#11131a] to-[#0d0f12]">
+              <CardContent className="p-6 sm:p-8">
+                <div className="flex flex-col lg:flex-row lg:items-center gap-6">
+                  <div className="flex-1 space-y-4">
+                    <div className="inline-flex items-center gap-2 rounded-full bg-accent/15 text-accent px-3 py-1 text-xs font-medium w-fit">
+                      <Sparkles className="w-4 h-4" />
+                      Personalized dashboard preview
                     </div>
-                    <div className="text-sm text-muted-foreground mb-3">
-                      {new Date(featuredEvent.commence_time).toLocaleDateString("en-US", {
-                        weekday: "long",
-                        month: "long",
-                        day: "numeric",
-                        hour: "numeric",
-                        minute: "2-digit",
+                    <div>
+                      <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2">Welcome back to LionStrikeAction</h1>
+                      <p className="text-muted-foreground max-w-2xl">
+                        Track the hottest lines across top sportsbooks, view odds movers at a glance, and jump straight into the markets you care about.
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-3">
+                      <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90" asChild>
+                        <Link href="/odds" className="inline-flex items-center gap-2">
+                          View Live Odds <ArrowRight className="w-4 h-4" />
+                        </Link>
+                      </Button>
+                      <Button size="lg" variant="outline" className="border-border text-foreground">
+                        Build Custom Widget
+                      </Button>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {[
+                        { label: "Tracked Sportsbooks", value: "7 live", icon: Shield },
+                        { label: "Active Alerts", value: "12", icon: Flame },
+                        { label: "Open Markets", value: "48", icon: Activity },
+                      ].map((item) => {
+                        const Icon = item.icon
+                        return (
+                          <div key={item.label} className="rounded-xl border border-border/70 bg-card/50 p-3">
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <Icon className="w-4 h-4 text-accent" />
+                              {item.label}
+                            </div>
+                            <div className="text-lg font-semibold mt-1">{item.value}</div>
+                          </div>
+                        )
                       })}
                     </div>
-                    <div className="text-sm space-y-1">
-                      <div>
-                        <span className="text-muted-foreground">Moneyline: </span>
-                        <span className="font-medium">
-                          {featuredEvent.away_team} +150, {featuredEvent.home_team} -120, Draw +250
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Spread: </span>
-                        <span className="font-medium">-1.5, Total: O/U 2.5</span>
-                      </div>
+                  </div>
+                  <div className="relative h-48 w-full lg:w-72 overflow-hidden rounded-2xl border border-border/60 bg-card/70">
+                    <Image
+                      src="/placeholder.jpg"
+                      alt="Featured match"
+                      fill
+                      priority
+                      sizes="(max-width: 1024px) 100vw, 288px"
+                      className="object-cover opacity-90"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-black/10" />
+                    <div className="absolute bottom-4 left-4 right-4 space-y-1">
+                      <p className="text-xs uppercase tracking-wide text-accent">Featured match</p>
+                      <p className="text-lg font-semibold">Manchester United vs Liverpool</p>
+                      <p className="text-xs text-muted-foreground">Moneyline: Man U +150 | Spread: -1.5 | O/U 2.5</p>
                     </div>
-                    <Button className="mt-4 bg-yellow-500 hover:bg-yellow-600 text-black">
-                      View All Markets
-                    </Button>
                   </div>
                 </div>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">Loading featured match...</div>
-              )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          {/* Odds Movers */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Odds Movers</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <div className="font-medium text-sm mb-1">GS Warriors vs LAL</div>
-                <div className="text-xs text-muted-foreground">
-                  Spread: -5.5{" "}
-                  <span className="text-green-500 inline-flex items-center">
-                    <ArrowUp className="w-3 h-3 mr-1" />-110
-                  </span>{" "}
-                  <span className="text-red-500 inline-flex items-center">
-                    <ArrowDown className="w-3 h-3 mr-1" />-125
-                  </span>
-                </div>
-              </div>
-              <div>
-                <div className="font-medium text-sm mb-1">NY Yankees vs BOS</div>
-                <div className="text-xs text-muted-foreground">
-                  Moneyline{" "}
-                  <span className="text-red-500 inline-flex items-center">
-                    <ArrowDown className="w-3 h-3 mr-1" />+150
-                  </span>{" "}
-                  <span className="text-green-500 inline-flex items-center">
-                    <ArrowUp className="w-3 h-3 mr-1" />+135
-                  </span>
-                </div>
-              </div>
-              <div>
-                <div className="font-medium text-sm mb-1">Real Madrid vs BAR</div>
-                <div className="text-xs text-muted-foreground">
-                  Total O/U: 3.5{" "}
-                  <span className="text-green-500 inline-flex items-center">
-                    <ArrowUp className="w-3 h-3 mr-1" />-105
-                  </span>{" "}
-                  <span className="text-red-500 inline-flex items-center">
-                    <ArrowDown className="w-3 h-3 mr-1" />-115
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+            <div className="grid gap-4">
+              <Card className="border-border/60">
+                <CardHeader className="pb-3">
+                  <CardTitle>Day overview</CardTitle>
+                  <CardDescription>Quick look at today&apos;s board</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {[
+                    { label: "Games with movement", value: "18", badge: "+6 in the last hour" },
+                    { label: "Best line improvements", value: "12", badge: "Across 4 books" },
+                    { label: "Bets you follow", value: "9", badge: "Updated 15m ago" },
+                  ].map((stat) => (
+                    <div key={stat.label} className="flex items-center justify-between rounded-lg border border-border/60 bg-card/70 px-3 py-2">
+                      <div className="space-y-0.5">
+                        <p className="text-sm text-muted-foreground">{stat.label}</p>
+                        <p className="text-lg font-semibold text-foreground">{stat.value}</p>
+                      </div>
+                      <span className="text-xs text-accent bg-accent/15 px-2 py-1 rounded-full">{stat.badge}</span>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
 
-          {/* My Favorite Teams */}
-          <Card>
-            <CardHeader>
-              <CardTitle>My Favorite Teams</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <div className="font-medium text-sm">Golden State Warriors</div>
-                  <div className="text-xs text-muted-foreground">Next Match vs. Lakers</div>
-                  <Button variant="link" className="p-0 h-auto text-xs text-yellow-500 mt-1">
-                    See Odds →
-                  </Button>
-                </div>
-                <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white">
-                  🏀
-                </div>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <div className="font-medium text-sm">Kansas City Chiefs</div>
-                  <div className="text-xs text-muted-foreground">Next Match vs. Raiders</div>
-                  <Button variant="link" className="p-0 h-auto text-xs text-yellow-500 mt-1">
-                    See Odds →
-                  </Button>
-                </div>
-                <div className="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center text-white">
-                  🏈
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              <Card className="border-border/60">
+                <CardHeader className="pb-3">
+                  <CardTitle>Upcoming highlights</CardTitle>
+                  <CardDescription>Keep an eye on what moves next</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {[
+                    { title: "NFL · Week 9", detail: "Lines open in 3h", icon: CalendarClock },
+                    { title: "NBA · Live tonight", detail: "5 games with sharp movement", icon: TrendingUp },
+                  ].map((item) => {
+                    const Icon = item.icon
+                    return (
+                      <div key={item.title} className="flex items-center gap-3 rounded-lg border border-border/60 bg-card/60 px-3 py-2">
+                        <div className="p-2 rounded-md bg-accent/15 text-accent">
+                          <Icon className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">{item.title}</p>
+                          <p className="text-xs text-muted-foreground">{item.detail}</p>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
 
-          {/* Today's Games */}
-          <Card className="lg:col-span-1">
-            <CardHeader>
-              <CardTitle>Today's NBA Games</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {todaysGames.length > 0 ? (
-                todaysGames.map((game) => {
-                  const gameTime = new Date(game.commence_time)
+          <div className="grid gap-4 lg:grid-cols-3">
+            <Card className="lg:col-span-2 border-border/60">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Featured market</CardTitle>
+                  <CardDescription>Premier League · Tomorrow, 8:00 PM</CardDescription>
+                </div>
+                <Button variant="outline" size="sm" asChild>
+                  <Link href="/odds" className="inline-flex items-center gap-2">
+                    View market <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </Button>
+              </CardHeader>
+              <CardContent className="grid md:grid-cols-3 gap-4">
+                {[
+                  { label: "Moneyline", value: "Man U +150 / LIV -120" },
+                  { label: "Spread", value: "LIV -1.5 (+102)" },
+                  { label: "Total", value: "O/U 2.5 (-110)" },
+                ].map((item) => (
+                  <div key={item.label} className="rounded-xl border border-border/60 bg-card/70 p-4">
+                    <p className="text-sm text-muted-foreground">{item.label}</p>
+                    <p className="text-lg font-semibold">{item.value}</p>
+                  </div>
+                ))}
+                <div className="md:col-span-3 rounded-xl border border-border/60 bg-card/50 p-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Live comparison</p>
+                    <p className="text-base font-semibold">DraftKings showing best away line right now</p>
+                  </div>
+                  <span className="text-xs rounded-full bg-accent/15 text-accent px-3 py-1">Best price</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/60">
+              <CardHeader className="pb-3">
+                <CardTitle>Confidence snapshot</CardTitle>
+                <CardDescription>Line stability across books</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {[
+                  { label: "Line consensus", value: "83%", icon: Trophy },
+                  { label: "Movement heat", value: "High", icon: Flame },
+                  { label: "Hold steady", value: "12 games", icon: Shield },
+                ].map((item) => {
+                  const Icon = item.icon
                   return (
-                    <div key={game.id} className="border-b border-border pb-3 last:border-0 last:pb-0">
-                      <div className="font-medium text-sm mb-1">
-                        {game.away_team} @ {game.home_team}
+                    <div key={item.label} className="flex items-center justify-between rounded-lg border border-border/60 bg-card/70 px-3 py-2">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-md bg-accent/15 text-accent">
+                          <Icon className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">{item.label}</p>
+                          <p className="text-xs text-muted-foreground">vs top sportsbooks</p>
+                        </div>
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        {gameTime.toLocaleTimeString("en-US", {
-                          hour: "numeric",
-                          minute: "2-digit",
-                        })}{" "}
-                        EST
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        {game.home_team.split(" ").pop()} -7.5, O/U 225.5
-                      </div>
+                      <span className="text-sm font-semibold">{item.value}</span>
                     </div>
                   )
-                })
-              ) : (
-                <div className="text-center py-4 text-muted-foreground text-sm">No games today</div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                })}
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-3">
+            <Card className="border-border/60">
+              <CardHeader className="flex flex-row items-center justify-between pb-3">
+                <div>
+                  <CardTitle>Odds movers</CardTitle>
+                  <CardDescription>Lines shifting the fastest</CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {oddsMovers.map((item) => (
+                  <div
+                    key={item.teams}
+                    className="flex items-center justify-between rounded-lg border border-border/60 bg-card/70 px-3 py-2"
+                  >
+                    <div>
+                      <p className="text-sm font-semibold">{item.teams}</p>
+                      <p className="text-xs text-muted-foreground">{item.movement}</p>
+                    </div>
+                    <div className="flex items-center gap-1 text-xs font-medium">
+                      {item.trend === "up" ? (
+                        <TrendingUp className="w-4 h-4 text-green-400" />
+                      ) : (
+                        <TrendingDown className="w-4 h-4 text-red-400" />
+                      )}
+                      <span className={item.trend === "up" ? "text-green-400" : "text-red-400"}>{item.change}</span>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/60">
+              <CardHeader className="flex flex-row items-center justify-between pb-3">
+                <div>
+                  <CardTitle>My favorite teams</CardTitle>
+                  <CardDescription>Quick view of upcoming action</CardDescription>
+                </div>
+                <Button variant="ghost" size="sm" className="text-accent hover:text-accent">
+                  Manage
+                </Button>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {favoriteTeams.map((team) => (
+                  <div key={team.name} className="rounded-lg border border-border/60 bg-card/70 px-3 py-2">
+                    <p className="text-sm font-semibold">{team.name}</p>
+                    <p className="text-xs text-muted-foreground">{team.next}</p>
+                    <Button variant="ghost" size="sm" className="px-0 text-accent hover:text-accent">
+                      See odds
+                    </Button>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/60">
+              <CardHeader className="flex flex-row items-center justify-between pb-3">
+                <div>
+                  <CardTitle>Today&apos;s games</CardTitle>
+                  <CardDescription>Fast filters for tonight</CardDescription>
+                </div>
+                <Button variant="outline" size="sm" asChild>
+                  <Link href="/odds">All markets</Link>
+                </Button>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {todaysGames.map((game) => (
+                  <div key={game.title} className="rounded-lg border border-border/60 bg-card/70 px-3 py-2">
+                    <p className="text-sm font-semibold">{game.title}</p>
+                    <p className="text-xs text-muted-foreground">{game.detail}</p>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
       </div>
     </AppLayout>
   )

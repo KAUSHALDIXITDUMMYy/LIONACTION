@@ -9,6 +9,11 @@ interface EnvConfig {
   FRONTEND_URL: string
   CACHE_TTL_SECONDS: number
   NODE_ENV: string
+  DB_HOST: string
+  DB_PORT: number
+  DB_NAME: string
+  DB_USER: string
+  DB_PASSWORD: string
 }
 
 function validatePort(port: number): number {
@@ -49,6 +54,13 @@ function getEnvConfig(): EnvConfig {
     parseInt(process.env.CACHE_TTL_SECONDS || '300', 10)
   )
 
+  // Database configuration
+  const DB_HOST = process.env.DB_HOST || 'localhost'
+  const DB_PORT = validatePort(parseInt(process.env.DB_PORT || '5432', 10))
+  const DB_NAME = process.env.DB_NAME || 'odds_dashboard'
+  const DB_USER = process.env.DB_USER || 'postgres'
+  const DB_PASSWORD = process.env.DB_PASSWORD || 'postgres_password_change_me'
+
   return {
     ODDS_API_KEY: ODDS_API_KEY.trim(),
     ODDS_API_BASE_URL:
@@ -57,6 +69,11 @@ function getEnvConfig(): EnvConfig {
     FRONTEND_URL,
     CACHE_TTL_SECONDS,
     NODE_ENV: process.env.NODE_ENV || 'development',
+    DB_HOST,
+    DB_PORT,
+    DB_NAME,
+    DB_USER,
+    DB_PASSWORD,
   }
 }
 

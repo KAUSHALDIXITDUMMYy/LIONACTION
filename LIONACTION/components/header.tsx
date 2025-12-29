@@ -1,36 +1,27 @@
 "use client"
 
-import { Search } from "lucide-react"
-import { Input } from "@/components/ui/input"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { useAuth } from "@/lib/auth-context"
+import { Menu } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
-export function Header() {
-  const { user } = useAuth()
+interface HeaderProps {
+  onMenuClick?: () => void
+}
 
-  const getInitials = (email: string | null | undefined) => {
-    if (!email) return "U"
-    return email.charAt(0).toUpperCase()
-  }
-
+export function Header({ onMenuClick }: HeaderProps) {
   return (
-    <header className="h-16 border-b border-border bg-card flex items-center px-3 md:px-6 gap-2 md:gap-4">
-      {/* Search Bar */}
-      <div className="flex-1 max-w-2xl">
-        <div className="relative">
-          <Search className="absolute left-2 md:left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-          <Input
-            type="search"
-            placeholder="Search teams, leagues..."
-            className="pl-8 md:pl-10 bg-background border-border text-sm md:text-base"
-          />
-        </div>
+    <header className="sticky top-0 z-30 bg-card/95 backdrop-blur-md border-b border-border shrink-0">
+      <div className="flex items-center gap-3 sm:gap-4 px-4 sm:px-6 py-3">
+        {/* Mobile Menu Button */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onMenuClick}
+          className="lg:hidden shrink-0"
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
       </div>
-
-      {/* User Avatar */}
-      <Avatar className="w-8 h-8 flex-shrink-0">
-        <AvatarFallback className="text-xs">{getInitials(user?.email)}</AvatarFallback>
-      </Avatar>
     </header>
   )
 }
+

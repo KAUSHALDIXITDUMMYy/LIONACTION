@@ -23,6 +23,9 @@ export function Navigation() {
           <Link href="/odds" className="text-muted-foreground hover:text-foreground transition-colors">
             Odds
           </Link>
+          <Link href="/profile" className="text-muted-foreground hover:text-foreground transition-colors">
+            Profile
+          </Link>
           <Link href="/" className="text-muted-foreground hover:text-foreground transition-colors">
             Home
           </Link>

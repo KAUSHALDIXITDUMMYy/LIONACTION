@@ -1,8 +1,38 @@
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 
-export function cn(...inputs: ClassValue[]) {
+export function cn(...inputs: ClassValue[]): string {
   return twMerge(clsx(inputs))
+}
+
+/**
+ * Gets the backend API URL
+ * Uses NEXT_PUBLIC_API_URL if set, otherwise defaults to localhost:8000 for development
+ */
+export function getApiUrl(): string {
+  if (typeof window !== 'undefined') {
+    // Client-side: use environment variable or default to localhost
+    return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+  }
+  // Server-side: use environment variable or default to localhost
+  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+}
+
+/**
+ * Gets authentication headers for API requests
+ * @param userId - Firebase user ID
+ * @returns Headers object with Authorization header
+ */
+export function getAuthHeaders(userId: string | null): HeadersInit {
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+  }
+  
+  if (userId) {
+    headers['Authorization'] = `Bearer ${userId}`
+  }
+  
+  return headers
 }
 
 /**

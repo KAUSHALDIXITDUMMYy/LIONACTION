@@ -1,6 +1,5 @@
 import { env } from '../config/env'
 import { OddsEvent } from '../types/odds.types'
-import { cacheService } from './cache.service'
 import { requestDeduplicationService } from './request-deduplication.service'
 import { generateMockOdds } from './mock-odds.service'
 import { fetchWithRetry } from '../utils/retry'
@@ -62,7 +61,8 @@ class OddsService {
 
   /**
    * Main method to get odds for a sport
-   * Implements cache-first strategy with request deduplication
+   * Simple direct API call - no caching
+   * Uses request deduplication to prevent duplicate concurrent requests
    */
   async getOdds(sport: string): Promise<OddsEvent[]> {
     // Validate sport parameter
@@ -70,32 +70,24 @@ class OddsService {
       throw new Error('Invalid sport parameter')
     }
 
-    // Check cache first
-    const cached = cacheService.get(sport)
-    if (cached) {
-      logger.info('Returning cached odds', { sport, count: cached.length })
-      return cached
-    }
-
-    // Use request deduplication to prevent concurrent requests
     try {
+      // Use deduplication to prevent multiple concurrent requests for same sport
       const data = await requestDeduplicationService.getOrCreateRequest(
         sport,
         async () => {
+          logger.info('Fetching odds from API', { sport })
+          
           // Fetch from API
           const rawData = await this.fetchOddsFromAPI(sport)
+          
           // Process data (apply mock generation if needed)
           const processedData = this.processOddsData(rawData)
-          // Store in cache (non-blocking - don't fail if cache fails)
-          try {
-            cacheService.set(sport, processedData)
-          } catch (cacheError) {
-            logger.warn('Failed to cache odds data', {
-              sport,
-              error: cacheError instanceof Error ? cacheError.message : 'Unknown error',
-            })
-            // Continue even if caching fails
-          }
+          
+          logger.info('Odds fetched and processed', {
+            sport,
+            count: processedData.length,
+          })
+          
           return processedData
         }
       )

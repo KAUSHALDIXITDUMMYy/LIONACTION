@@ -3,19 +3,15 @@
 import { useAuth } from "@/lib/auth-context"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, Globe, Ticket, User, Settings, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { LayoutDashboard, Globe, LogOut, UserCircle, X, Bookmark } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-const navigation = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "All Sports", href: "/odds", icon: Globe },
-  { name: "My Bets", href: "/bets", icon: Ticket },
-  { name: "Account", href: "/account", icon: User },
-]
+interface SidebarProps {
+  onClose?: () => void
+}
 
-export function Sidebar() {
+export function Sidebar({ onClose }: SidebarProps) {
   const { user, logout } = useAuth()
   const pathname = usePathname()
 
@@ -23,80 +19,97 @@ export function Sidebar() {
     await logout()
   }
 
-  const getInitials = (email: string | null | undefined) => {
-    if (!email) return "U"
-    return email.charAt(0).toUpperCase()
+  const handleLinkClick = () => {
+    if (onClose) {
+      onClose()
+    }
   }
 
+  const navItems = [
+    { href: "/", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/odds", label: "Odds Board", icon: Globe },
+    { href: "/my-odds", label: "My Odds", icon: Bookmark },
+  ]
+
   return (
-    <div className="flex flex-col h-full w-full bg-card">
-      {/* Logo */}
-      <div className="p-6 border-b border-border">
-        <Link href="/" className="flex items-center gap-2">
+    <aside className="h-full w-64 bg-sidebar border-r border-sidebar-border flex flex-col">
+      {/* Logo Section */}
+      <div className="p-6 border-b border-sidebar-border flex items-center justify-between">
+        <Link href="/" className="flex items-center gap-2" onClick={handleLinkClick}>
           <span className="text-2xl font-bold text-accent">🦁</span>
-          <span className="text-xl font-bold">LionStrikeAction</span>
+          <span className="text-lg font-bold text-sidebar-foreground">LionStrikeAction</span>
         </Link>
+        {onClose && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className="lg:hidden h-8 w-8"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        )}
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-1">
-        {navigation.map((item) => {
+      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+        {navItems.map((item) => {
+          const Icon = item.icon
           const isActive = pathname === item.href || (item.href === "/" && pathname === "/")
+          
           return (
             <Link
-              key={item.name}
+              key={item.href}
               href={item.href}
+              onClick={handleLinkClick}
               className={cn(
-                "flex items-center gap-3 px-4 py-3 rounded-lg transition-colors",
+                "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 text-sm",
                 isActive
-                  ? "bg-yellow-500/20 text-yellow-500 font-medium"
-                  : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                  ? "bg-accent text-accent-foreground font-semibold shadow-sm"
+                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
               )}
             >
-              <item.icon className="w-5 h-5" />
-              <span>{item.name}</span>
+              <Icon className="w-5 h-5 shrink-0" />
+              <span>{item.label}</span>
             </Link>
           )
         })}
       </nav>
 
-      {/* User Profile Section */}
-      <div className="p-4 border-t border-border space-y-2">
-        <div className="flex items-center gap-3 px-2 py-2">
-          <Avatar className="w-10 h-10">
-            <AvatarFallback>{getInitials(user?.email)}</AvatarFallback>
-          </Avatar>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">
-              {user?.displayName || user?.email?.split("@")[0] || "User"}
-            </p>
-            <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+      {/* User Section */}
+      <div className="p-4 border-t border-sidebar-border space-y-2 mt-auto">
+        <Link
+          href="/profile"
+          onClick={handleLinkClick}
+          className={cn(
+            "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 text-sm",
+            pathname === "/profile"
+              ? "bg-accent text-accent-foreground font-semibold shadow-sm"
+              : "bg-sidebar-accent/50 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+          )}
+        >
+          <div className="w-9 h-9 rounded-full bg-sidebar-accent flex items-center justify-center shrink-0">
+            <UserCircle className="w-5 h-5 text-sidebar-foreground/70" />
           </div>
-        </div>
-        <div className="space-y-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full justify-start text-muted-foreground hover:text-foreground"
-            asChild
-          >
-            <Link href="/settings">
-              <Settings className="w-4 h-4 mr-2" />
-              Settings
-            </Link>
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full justify-start text-muted-foreground hover:text-foreground"
-            onClick={handleLogout}
-          >
-            <LogOut className="w-4 h-4 mr-2" />
-            Log Out
-          </Button>
-        </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-medium text-sidebar-foreground truncate">
+              {user?.displayName || user?.email?.split("@")[0] || "User"}
+            </div>
+            <div className="text-xs text-sidebar-foreground/60 truncate">
+              Profile
+            </div>
+          </div>
+        </Link>
+        <Button
+          onClick={handleLogout}
+          variant="ghost"
+          className="w-full justify-start gap-3 px-3 py-2.5 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground text-sm"
+        >
+          <LogOut className="w-4 h-4" />
+          <span>Log Out</span>
+        </Button>
       </div>
-    </div>
+    </aside>
   )
 }
 

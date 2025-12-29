@@ -1,7 +1,9 @@
 import { Router, Request, Response, NextFunction } from 'express'
 import { oddsService } from '../services/odds.service'
+import { snapshotService } from '../services/snapshot.service'
 import { logger } from '../utils/logger'
 import { SPORTS } from '../config/constants'
+import { rateLimitMiddleware } from '../middleware/rate-limit.middleware'
 
 const router = Router()
 
@@ -35,7 +37,26 @@ function validateSport(sport: string | undefined): string {
   return 'americanfootball_nfl'
 }
 
-router.get('/api/odds', async (req: Request, res: Response, next: NextFunction) => {
+// Endpoint to fetch from database (no rate limit) - used when changing sports
+router.get('/api/odds/db', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const sport = validateSport(req.query.sport as string | undefined)
+
+    logger.info('Odds DB request', {
+      sport,
+      ip: req.ip,
+    })
+
+    const data = await snapshotService.getLatestOddsFromDB(sport)
+
+    res.json({ data })
+  } catch (error) {
+    next(error)
+  }
+})
+
+// Endpoint to fetch from API (with rate limit) - used for refresh button
+router.get('/api/odds', rateLimitMiddleware, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const sport = validateSport(req.query.sport as string | undefined)
     const requestId = (req as any).requestId || 'unknown'
