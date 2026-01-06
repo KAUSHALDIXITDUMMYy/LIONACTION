@@ -3,8 +3,8 @@
 import { useAuth } from "@/lib/auth-context"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { LayoutDashboard, Globe, LogOut, UserCircle, X, Bookmark } from "lucide-react"
+import { LiquidButton } from "@/components/animate-ui/components/buttons/liquid"
+import { LayoutDashboard, Globe, LogOut, UserCircle, X, Bookmark, TrendingUp } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface SidebarProps {
@@ -28,6 +28,7 @@ export function Sidebar({ onClose }: SidebarProps) {
   const navItems = [
     { href: "/", label: "Dashboard", icon: LayoutDashboard },
     { href: "/odds", label: "Odds Board", icon: Globe },
+    { href: "/historical-odds", label: "Historical Odds", icon: TrendingUp },
     { href: "/my-odds", label: "My Odds", icon: Bookmark },
   ]
 
@@ -40,14 +41,14 @@ export function Sidebar({ onClose }: SidebarProps) {
           <span className="text-lg font-bold text-sidebar-foreground">LionStrikeAction</span>
         </Link>
         {onClose && (
-          <Button
+          <LiquidButton
             variant="ghost"
             size="icon"
             onClick={onClose}
             className="lg:hidden h-8 w-8"
           >
             <X className="h-4 w-4" />
-          </Button>
+          </LiquidButton>
         )}
       </div>
 
@@ -88,26 +89,38 @@ export function Sidebar({ onClose }: SidebarProps) {
               : "bg-sidebar-accent/50 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
           )}
         >
-          <div className="w-9 h-9 rounded-full bg-sidebar-accent flex items-center justify-center shrink-0">
-            <UserCircle className="w-5 h-5 text-sidebar-foreground/70" />
+          <div className={cn(
+            "w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-colors",
+            pathname === "/profile"
+              ? "bg-accent-foreground/10"
+              : "bg-sidebar-accent"
+          )}>
+            <UserCircle className={cn(
+              "w-5 h-5 transition-colors",
+              pathname === "/profile"
+                ? "text-accent-foreground"
+                : "text-sidebar-foreground/70"
+            )} />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium text-sidebar-foreground truncate">
-              {user?.displayName || user?.email?.split("@")[0] || "User"}
-            </div>
-            <div className="text-xs text-sidebar-foreground/60 truncate">
-              Profile
+            <div className={cn(
+              "text-sm font-medium truncate transition-colors",
+              pathname === "/profile"
+                ? "text-accent-foreground"
+                : "text-sidebar-foreground"
+            )}>
+              My Profile
             </div>
           </div>
         </Link>
-        <Button
+        <LiquidButton
           onClick={handleLogout}
           variant="ghost"
           className="w-full justify-start gap-3 px-3 py-2.5 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground text-sm"
         >
           <LogOut className="w-4 h-4" />
           <span>Log Out</span>
-        </Button>
+        </LiquidButton>
       </div>
     </aside>
   )

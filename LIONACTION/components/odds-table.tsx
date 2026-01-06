@@ -4,7 +4,7 @@ import React, { useState, useMemo } from "react"
 import type { OddsEvent, Bookmaker, OddsMarket } from "@/lib/odds-types"
 import { SPORTSBOOKS, SPORTSBOOK_LOGOS, TEAM_LOGOS } from "@/lib/odds-types"
 import { formatOdds } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
+import { LiquidButton } from "@/components/animate-ui/components/buttons/liquid"
 import { Card } from "@/components/ui/card"
 import { Star } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -147,7 +147,7 @@ export function OddsTable({ events, selectedMarket }: OddsTableProps) {
 
             const isSelected = selectedBookmakers.has(key)
             return (
-              <Button
+              <LiquidButton
                 key={key}
                 onClick={() => toggleBookmaker(key)}
                 variant={isSelected ? "default" : "outline"}
@@ -159,7 +159,7 @@ export function OddsTable({ events, selectedMarket }: OddsTableProps) {
               >
                 <span className="mr-1.5 text-sm">{SPORTSBOOK_LOGOS[key] || "📱"}</span>
                 <span className="hidden sm:inline">{book.title}</span>
-              </Button>
+              </LiquidButton>
             )
           })}
         </div>

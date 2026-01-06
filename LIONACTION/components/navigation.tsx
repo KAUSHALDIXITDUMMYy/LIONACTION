@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/lib/auth-context"
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
+import { LiquidButton } from "@/components/animate-ui/components/buttons/liquid"
 
 export function Navigation() {
   const { user, logout } = useAuth()
@@ -23,6 +23,9 @@ export function Navigation() {
           <Link href="/odds" className="text-muted-foreground hover:text-foreground transition-colors">
             Odds
           </Link>
+          <Link href="/historical-odds" className="text-muted-foreground hover:text-foreground transition-colors">
+            Historical Odds
+          </Link>
           <Link href="/profile" className="text-muted-foreground hover:text-foreground transition-colors">
             Profile
           </Link>
@@ -32,9 +35,9 @@ export function Navigation() {
 
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">{user?.email}</span>
-            <Button onClick={handleLogout} variant="outline" size="sm">
+            <LiquidButton onClick={handleLogout} variant="outline" size="sm">
               Logout
-            </Button>
+            </LiquidButton>
           </div>
         </div>
       </div>

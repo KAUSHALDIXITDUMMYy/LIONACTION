@@ -6,7 +6,7 @@ import {
 } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
-import { Button, buttonVariants } from '@/components/ui/button'
+import { LiquidButton, liquidButtonVariants } from '@/components/animate-ui/components/buttons/liquid'
 
 function Pagination({ className, ...props }: React.ComponentProps<'nav'>) {
   return (
@@ -39,7 +39,7 @@ function PaginationItem({ ...props }: React.ComponentProps<'li'>) {
 
 type PaginationLinkProps = {
   isActive?: boolean
-} & Pick<React.ComponentProps<typeof Button>, 'size'> &
+} & Pick<React.ComponentProps<typeof LiquidButton>, 'size'> &
   React.ComponentProps<'a'>
 
 function PaginationLink({
@@ -54,7 +54,7 @@ function PaginationLink({
       data-slot="pagination-link"
       data-active={isActive}
       className={cn(
-        buttonVariants({
+        liquidButtonVariants({
           variant: isActive ? 'outline' : 'ghost',
           size,
         }),

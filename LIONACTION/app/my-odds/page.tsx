@@ -1,12 +1,13 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useState, useRef } from "react"
 import { AppLayout } from "@/components/app-layout"
+import { AnalyticsSection, type AnalyticsSectionRef } from "@/components/analytics-section"
 import { ProtectedRoute } from "@/components/protected-route"
 import { useAuth } from "@/lib/auth-context"
 import { getApiUrl, getAuthHeaders, formatOdds } from "@/lib/utils"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { LiquidButton } from "@/components/animate-ui/components/buttons/liquid"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -52,6 +53,7 @@ interface BetStats {
 
 function MyOddsContent() {
   const { user } = useAuth()
+  const analyticsRef = useRef<AnalyticsSectionRef>(null)
   const [bets, setBets] = useState<SavedBet[]>([])
   const [stats, setStats] = useState<BetStats | null>(null)
   const [loading, setLoading] = useState(true)
@@ -139,6 +141,8 @@ function MyOddsContent() {
 
       setEditingBet(null)
       fetchBets()
+      // Refresh analytics after bet update
+      analyticsRef.current?.refresh()
     } catch (error) {
       toast({
         title: "Error",
@@ -170,6 +174,8 @@ function MyOddsContent() {
       })
 
       fetchBets()
+      // Refresh analytics after bet deletion
+      analyticsRef.current?.refresh()
     } catch (error) {
       toast({
         title: "Error",
@@ -195,6 +201,9 @@ function MyOddsContent() {
   return (
     <AppLayout>
       <div className="p-6 lg:p-8 space-y-6 max-w-[1800px] mx-auto">
+        {/* Performance Analytics */}
+        <AnalyticsSection ref={analyticsRef} />
+
         <Card className="border-border/70 bg-gradient-to-r from-[#161922] via-[#11131a] to-[#0d0f12]">
           <CardHeader>
             <CardTitle className="text-3xl">My Odds</CardTitle>
@@ -293,13 +302,13 @@ function MyOddsContent() {
                         <div className="flex gap-2">
                           <Dialog>
                             <DialogTrigger asChild>
-                              <Button
+                              <LiquidButton
                                 size="sm"
                                 variant="outline"
                                 onClick={() => handleEdit(bet)}
                               >
                                 <Edit2 className="w-4 h-4" />
-                              </Button>
+                              </LiquidButton>
                             </DialogTrigger>
                             <DialogContent>
                               <DialogHeader>
@@ -355,20 +364,20 @@ function MyOddsContent() {
                                 </div>
                               </div>
                               <DialogFooter>
-                                <Button variant="outline" onClick={() => setEditingBet(null)}>
+                                <LiquidButton variant="outline" onClick={() => setEditingBet(null)}>
                                   Cancel
-                                </Button>
-                                <Button onClick={handleSaveEdit}>Save Changes</Button>
+                                </LiquidButton>
+                                <LiquidButton onClick={handleSaveEdit}>Save Changes</LiquidButton>
                               </DialogFooter>
                             </DialogContent>
                           </Dialog>
-                          <Button
+                          <LiquidButton
                             size="sm"
                             variant="destructive"
                             onClick={() => handleDelete(bet.id)}
                           >
                             <Trash2 className="w-4 h-4" />
-                          </Button>
+                          </LiquidButton>
                         </div>
                       </div>
                     </CardContent>

@@ -155,6 +155,29 @@ class SavedBetsService {
   }
 
   /**
+   * Gets saved bets for a specific game
+   */
+  async getBetsForGame(userId: string, gameId: string): Promise<SavedBet[]> {
+    try {
+      const bets = await query<SavedBet>(
+        `SELECT * FROM user_saved_bets
+         WHERE user_id = $1 AND game_id = $2
+         ORDER BY created_at DESC`,
+        [userId, gameId]
+      )
+
+      return bets || []
+    } catch (error) {
+      logger.error('Failed to get bets for game', {
+        user_id: userId,
+        game_id: gameId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      })
+      throw error
+    }
+  }
+
+  /**
    * Gets a single bet by ID (with user verification)
    */
   async getBetById(betId: number, userId: string): Promise<SavedBet | null> {
@@ -219,8 +242,10 @@ class SavedBetsService {
       }
 
       if (updates.status !== undefined) {
+        // Normalize status to lowercase for consistency
+        const normalizedStatus = updates.status.toLowerCase().trim()
         updateFields.push(`status = $${paramIndex}`)
-        updateValues.push(updates.status)
+        updateValues.push(normalizedStatus)
         paramIndex++
       }
 
@@ -286,6 +311,266 @@ class SavedBetsService {
   }
 
   /**
+   * Gets analytics data for a user (win rates by week, sport, overall)
+   */
+  async getUserAnalytics(userId: string, startDate?: Date, endDate?: Date): Promise<{
+    overall: {
+      wins: number
+      losses: number
+      winRate: number
+      total: number
+    }
+    byWeek: Array<{
+      week: string // ISO week string (e.g., "2024-W01")
+      weekStart: string // Start date of week
+      weekEnd: string // End date of week
+      wins: number
+      losses: number
+      winRate: number
+      total: number
+    }>
+    bySport: Array<{
+      sport_key: string
+      sport_title: string | null
+      wins: number
+      losses: number
+      winRate: number
+      total: number
+    }>
+  }> {
+    try {
+      logger.debug('Getting user analytics', {
+        user_id: userId,
+        startDate,
+        endDate,
+      })
+      // Build date filter
+      let dateFilter = ''
+      const dateParams: any[] = [userId]
+      let paramIndex = 2
+      
+      if (startDate || endDate) {
+        const conditions: string[] = []
+        if (startDate) {
+          conditions.push(`created_at >= $${paramIndex}`)
+          dateParams.push(startDate)
+          paramIndex++
+        }
+        if (endDate) {
+          conditions.push(`created_at <= $${paramIndex}`)
+          dateParams.push(endDate)
+          paramIndex++
+        }
+        dateFilter = `AND ${conditions.join(' AND ')}`
+      }
+
+      // First, check all bets for this user to debug
+      const allBetsCheck = await query<{
+        status: string
+        count: string
+      }>(
+        `SELECT LOWER(TRIM(status)) as status, COUNT(*)::text as count
+         FROM user_saved_bets
+         WHERE user_id = $1
+         GROUP BY LOWER(TRIM(status))`,
+        [userId]
+      )
+
+      // Also get sample bets to see actual status values
+      const sampleBets = await query<{
+        id: number
+        status: string
+        created_at: Date
+      }>(
+        `SELECT id, LOWER(TRIM(status)) as status, created_at
+         FROM user_saved_bets
+         WHERE user_id = $1
+         ORDER BY created_at DESC
+         LIMIT 10`,
+        [userId]
+      )
+
+      logger.info('All bets status breakdown', {
+        user_id: userId,
+        allBets: allBetsCheck,
+        sampleBets: sampleBets,
+        totalBets: allBetsCheck.reduce((sum, b) => sum + parseInt(b.count), 0),
+      })
+
+      // Check for case sensitivity issues - get all statuses first
+      const allStatuses = await query<{
+        status: string
+      }>(
+        `SELECT DISTINCT LOWER(TRIM(status)) as status
+         FROM user_saved_bets
+         WHERE user_id = $1`,
+        [userId]
+      )
+
+      logger.info('All unique status values found', {
+        user_id: userId,
+        statuses: allStatuses.map(s => s.status),
+      })
+
+      // Get overall stats (only resolved bets: won/lost, exclude pending/void)
+      // Use LOWER(TRIM()) to handle any case sensitivity or whitespace issues
+      const overallStats = await query<{
+        status: string
+        count: string
+      }>(
+        `SELECT LOWER(TRIM(status)) as status, COUNT(*)::text as count
+         FROM user_saved_bets
+         WHERE user_id = $1 ${dateFilter}
+         AND LOWER(TRIM(status)) IN ('won', 'lost')
+         GROUP BY LOWER(TRIM(status))`,
+        dateParams
+      )
+
+      logger.info('Overall stats query result', {
+        user_id: userId,
+        results: overallStats,
+        dateFilter,
+        dateParams: dateParams.length,
+        queryParams: dateParams,
+      })
+
+      const wins = parseInt(overallStats.find(s => s.status === 'won')?.count || '0')
+      const losses = parseInt(overallStats.find(s => s.status === 'lost')?.count || '0')
+      const total = wins + losses
+      const winRate = total > 0 ? (wins / total) * 100 : 0
+
+      logger.info('Calculated overall analytics', {
+        user_id: userId,
+        wins,
+        losses,
+        total,
+        winRate,
+        overallStatsRaw: overallStats,
+      })
+
+      // Get weekly stats
+      const weeklyStats = await query<{
+        week: string
+        week_start: Date
+        week_end: Date
+        status: string
+        count: string
+      }>(
+        `SELECT 
+          TO_CHAR(created_at, 'IYYY-"W"IW') as week,
+          DATE_TRUNC('week', created_at) as week_start,
+          DATE_TRUNC('week', created_at) + INTERVAL '6 days' as week_end,
+          LOWER(TRIM(status)) as status,
+          COUNT(*)::text as count
+         FROM user_saved_bets
+         WHERE user_id = $1 ${dateFilter}
+         AND LOWER(TRIM(status)) IN ('won', 'lost')
+         GROUP BY week, week_start, week_end, LOWER(TRIM(status))
+         ORDER BY week_start DESC`,
+        dateParams
+      )
+
+      // Group weekly stats
+      const weeklyMap = new Map<string, { wins: number; losses: number; weekStart: Date; weekEnd: Date }>()
+      weeklyStats.forEach(stat => {
+        const week = stat.week
+        if (!weeklyMap.has(week)) {
+          weeklyMap.set(week, {
+            wins: 0,
+            losses: 0,
+            weekStart: stat.week_start,
+            weekEnd: stat.week_end,
+          })
+        }
+        const weekData = weeklyMap.get(week)!
+        if (stat.status === 'won') {
+          weekData.wins = parseInt(stat.count)
+        } else if (stat.status === 'lost') {
+          weekData.losses = parseInt(stat.count)
+        }
+      })
+
+      const byWeek = Array.from(weeklyMap.entries()).map(([week, data]) => ({
+        week,
+        weekStart: data.weekStart.toISOString().split('T')[0],
+        weekEnd: data.weekEnd.toISOString().split('T')[0],
+        wins: data.wins,
+        losses: data.losses,
+        total: data.wins + data.losses,
+        winRate: data.wins + data.losses > 0 ? (data.wins / (data.wins + data.losses)) * 100 : 0,
+      })).sort((a, b) => a.week.localeCompare(b.week))
+
+      // Get stats by sport
+      const sportStats = await query<{
+        sport_key: string
+        status: string
+        count: string
+      }>(
+        `SELECT sport_key, LOWER(TRIM(status)) as status, COUNT(*)::text as count
+         FROM user_saved_bets
+         WHERE user_id = $1 ${dateFilter}
+         AND LOWER(TRIM(status)) IN ('won', 'lost')
+         GROUP BY sport_key, LOWER(TRIM(status))
+         ORDER BY sport_key`,
+        dateParams
+      )
+
+      // Group sport stats
+      const sportMap = new Map<string, { wins: number; losses: number }>()
+      sportStats.forEach(stat => {
+        if (!sportMap.has(stat.sport_key)) {
+          sportMap.set(stat.sport_key, { wins: 0, losses: 0 })
+        }
+        const sportData = sportMap.get(stat.sport_key)!
+        if (stat.status === 'won') {
+          sportData.wins = parseInt(stat.count)
+        } else if (stat.status === 'lost') {
+          sportData.losses = parseInt(stat.count)
+        }
+      })
+
+      // Get sport titles from game_metadata
+      const sportTitles = await query<{
+        sport_key: string
+        sport_title: string | null
+      }>(
+        `SELECT DISTINCT sport_key, sport_title
+         FROM game_metadata
+         WHERE sport_key = ANY($1)`,
+        [Array.from(sportMap.keys())]
+      )
+
+      const sportTitleMap = new Map(sportTitles.map(s => [s.sport_key, s.sport_title]))
+
+      const bySport = Array.from(sportMap.entries()).map(([sport_key, data]) => ({
+        sport_key,
+        sport_title: sportTitleMap.get(sport_key) || null,
+        wins: data.wins,
+        losses: data.losses,
+        total: data.wins + data.losses,
+        winRate: data.wins + data.losses > 0 ? (data.wins / (data.wins + data.losses)) * 100 : 0,
+      })).sort((a, b) => b.winRate - a.winRate) // Sort by win rate descending
+
+      return {
+        overall: {
+          wins,
+          losses,
+          winRate: Math.round(winRate * 100) / 100,
+          total,
+        },
+        byWeek,
+        bySport,
+      }
+    } catch (error) {
+      logger.error('Failed to get user analytics', {
+        user_id: userId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      })
+      throw error
+    }
+  }
+
+  /**
    * Gets user bet statistics
    */
   async getUserBetStats(userId: string): Promise<{
@@ -300,10 +585,10 @@ class SavedBetsService {
         status: string
         count: string
       }>(
-        `SELECT status, COUNT(*) as count 
+        `SELECT LOWER(TRIM(status)) as status, COUNT(*)::text as count 
          FROM user_saved_bets 
          WHERE user_id = $1 
-         GROUP BY status`,
+         GROUP BY LOWER(TRIM(status))`,
         [userId]
       )
 

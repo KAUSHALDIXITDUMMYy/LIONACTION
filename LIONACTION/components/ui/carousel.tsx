@@ -7,7 +7,7 @@ import useEmblaCarousel, {
 import { ArrowLeft, ArrowRight } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
+import { LiquidButton } from '@/components/animate-ui/components/buttons/liquid'
 
 type CarouselApi = UseEmblaCarouselType[1]
 type UseCarouselParameters = Parameters<typeof useEmblaCarousel>
@@ -176,11 +176,11 @@ function CarouselPrevious({
   variant = 'outline',
   size = 'icon',
   ...props
-}: React.ComponentProps<typeof Button>) {
+}: React.ComponentProps<typeof LiquidButton>) {
   const { orientation, scrollPrev, canScrollPrev } = useCarousel()
 
   return (
-    <Button
+    <LiquidButton
       data-slot="carousel-previous"
       variant={variant}
       size={size}
@@ -197,7 +197,7 @@ function CarouselPrevious({
     >
       <ArrowLeft />
       <span className="sr-only">Previous slide</span>
-    </Button>
+    </LiquidButton>
   )
 }
 
@@ -206,11 +206,11 @@ function CarouselNext({
   variant = 'outline',
   size = 'icon',
   ...props
-}: React.ComponentProps<typeof Button>) {
+}: React.ComponentProps<typeof LiquidButton>) {
   const { orientation, scrollNext, canScrollNext } = useCarousel()
 
   return (
-    <Button
+    <LiquidButton
       data-slot="carousel-next"
       variant={variant}
       size={size}
@@ -227,7 +227,7 @@ function CarouselNext({
     >
       <ArrowRight />
       <span className="sr-only">Next slide</span>
-    </Button>
+    </LiquidButton>
   )
 }
 

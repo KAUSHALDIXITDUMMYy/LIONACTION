@@ -352,6 +352,86 @@ class SnapshotService {
       throw error
     }
   }
+
+  /**
+   * Gets historical odds snapshots for a specific game
+   * Returns all snapshots ordered by timestamp for charting
+   */
+  async getHistoricalOdds(gameId: string, marketKey?: string): Promise<Array<{
+    snapshot_timestamp: Date
+    snapshot_type: string
+    odds_data: OddsEvent
+  }>> {
+    try {
+      logger.debug('Fetching historical odds', { game_id: gameId, market: marketKey })
+      
+      const snapshots = await query<{
+        snapshot_timestamp: Date
+        snapshot_type: string
+        odds_data: any
+      }>(
+        `SELECT 
+          snapshot_timestamp,
+          snapshot_type,
+          odds_data
+        FROM odds_snapshots
+        WHERE game_id = $1
+        ORDER BY snapshot_timestamp ASC`,
+        [gameId]
+      )
+
+      if (!snapshots || snapshots.length === 0) {
+        logger.debug('No historical snapshots found', { game_id: gameId })
+        return []
+      }
+
+      logger.debug('Raw snapshots from database', {
+        game_id: gameId,
+        count: snapshots.length,
+        snapshot_types: snapshots.map(s => s.snapshot_type),
+        timestamps: snapshots.map(s => s.snapshot_timestamp),
+      })
+
+      // Parse JSONB data
+      const historicalData = snapshots
+        .map((snapshot) => {
+          try {
+            const oddsData =
+              typeof snapshot.odds_data === 'string'
+                ? JSON.parse(snapshot.odds_data)
+                : snapshot.odds_data
+            return {
+              snapshot_timestamp: snapshot.snapshot_timestamp,
+              snapshot_type: snapshot.snapshot_type,
+              odds_data: oddsData as OddsEvent,
+            }
+          } catch (error) {
+            logger.error('Failed to parse historical snapshot data', {
+              game_id: gameId,
+              error: error instanceof Error ? error.message : 'Unknown error',
+            })
+            return null
+          }
+        })
+        .filter((item): item is NonNullable<typeof item> => item !== null)
+
+      logger.info('Retrieved historical odds', {
+        game_id: gameId,
+        market: marketKey,
+        total_snapshots: snapshots.length,
+        parsed_snapshots: historicalData.length,
+        snapshot_types: [...new Set(historicalData.map(d => d.snapshot_type))],
+      })
+
+      return historicalData
+    } catch (error) {
+      logger.error('Failed to get historical odds', {
+        game_id: gameId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      })
+      throw error
+    }
+  }
 }
 
 export const snapshotService = new SnapshotService()

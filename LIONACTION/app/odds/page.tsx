@@ -7,9 +7,10 @@ import { ArrowRight, Clock4, Flame, RefreshCw, Shield, Trophy, Search, X } from 
 import { AppLayout } from "@/components/app-layout"
 import { OddsSelector } from "@/components/odds-selector"
 import { OddsTable } from "@/components/odds-table"
+import { AnalyticsSection } from "@/components/analytics-section"
 import { ProtectedRoute } from "@/components/protected-route"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { LiquidButton } from "@/components/animate-ui/components/buttons/liquid"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import type { OddsEvent } from "@/lib/odds-types"
@@ -200,7 +201,7 @@ function OddsContent() {
                         : "Pull the latest odds instantly"}
                     </p>
                   </div>
-                  <Button 
+                  <LiquidButton 
                     size="sm" 
                     variant={refreshButtonError ? "destructive" : "outline"} 
                     className="gap-2 min-w-[100px]" 
@@ -213,18 +214,18 @@ function OddsContent() {
                       : refreshButtonError 
                         ? "Rate Limited"
                         : "Refresh"}
-                  </Button>
+                  </LiquidButton>
                 </div>
                 <div className="flex items-center justify-between rounded-lg border border-border/60 bg-card/70 px-3 py-2">
                   <div>
                     <p className="text-sm font-medium">Add custom filters</p>
                     <p className="text-xs text-muted-foreground">Dial into a league or market</p>
                   </div>
-                  <Button size="sm" variant="ghost" className="text-accent hover:text-accent" asChild>
+                  <LiquidButton size="sm" variant="ghost" className="text-accent hover:text-accent" asChild>
                     <Link href="/odds">
                       Manage <ArrowRight className="w-4 h-4 ml-1" />
                     </Link>
-                  </Button>
+                  </LiquidButton>
                 </div>
               </CardContent>
             </Card>
@@ -258,14 +259,14 @@ function OddsContent() {
                   className="pl-10 pr-10"
                 />
                 {searchQuery && (
-                  <Button
+                  <LiquidButton
                     variant="ghost"
                     size="icon"
                     className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7"
                     onClick={() => setSearchQuery("")}
                   >
                     <X className="w-4 h-4" />
-                  </Button>
+                  </LiquidButton>
                 )}
               </div>
               <div className="grid gap-6 md:grid-cols-[auto_1fr]">
@@ -277,7 +278,7 @@ function OddsContent() {
                   <label className="text-sm font-medium text-foreground">Market Type</label>
                   <div className="flex flex-wrap gap-2">
                     {Object.values(MARKETS).map((mkt) => (
-                      <Button
+                      <LiquidButton
                         key={mkt.key}
                         variant={market === mkt.key ? "default" : "outline"}
                         size="sm"
@@ -285,7 +286,7 @@ function OddsContent() {
                         onClick={() => setMarket(mkt.key)}
                       >
                         {mkt.title}
-                      </Button>
+                      </LiquidButton>
                     ))}
                   </div>
                 </div>

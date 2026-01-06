@@ -85,5 +85,86 @@ router.get('/api/odds', rateLimitMiddleware, async (req: Request, res: Response,
   }
 })
 
+// Endpoint to fetch historical odds for a specific game
+router.get('/api/odds/historical', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const gameId = req.query.game_id as string | undefined
+    const marketKey = req.query.market as string | undefined
+
+    if (!gameId || typeof gameId !== 'string') {
+      return res.status(400).json({
+        error: 'Bad request',
+        message: 'game_id parameter is required',
+      })
+    }
+
+    logger.info('Historical odds request', {
+      game_id: gameId,
+      market: marketKey,
+      ip: req.ip,
+    })
+
+    const historicalData = await snapshotService.getHistoricalOdds(gameId, marketKey)
+
+    res.json({ data: historicalData })
+  } catch (error) {
+    next(error)
+  }
+})
+
+// Debug endpoint to check snapshot count for a game
+router.get('/api/odds/debug/snapshots', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const gameId = req.query.game_id as string | undefined
+
+    if (!gameId || typeof gameId !== 'string') {
+      return res.status(400).json({
+        error: 'Bad request',
+        message: 'game_id parameter is required',
+      })
+    }
+
+    const { query } = await import('../services/database.service')
+    
+    const result = await query<{
+      count: string
+      snapshot_type: string
+      min_timestamp: Date
+      max_timestamp: Date
+    }>(
+      `SELECT 
+        COUNT(*)::text as count,
+        snapshot_type,
+        MIN(snapshot_timestamp) as min_timestamp,
+        MAX(snapshot_timestamp) as max_timestamp
+      FROM odds_snapshots
+      WHERE game_id = $1
+      GROUP BY snapshot_type
+      ORDER BY snapshot_type`,
+      [gameId]
+    )
+
+    const total = await query<{ count: string }>(
+      `SELECT COUNT(*)::text as count
+       FROM odds_snapshots
+       WHERE game_id = $1`,
+      [gameId]
+    )
+
+    res.json({
+      game_id: gameId,
+      total_snapshots: parseInt(total[0]?.count || '0'),
+      by_type: result.map(r => ({
+        type: r.snapshot_type,
+        count: parseInt(r.count),
+        first: r.min_timestamp,
+        last: r.max_timestamp,
+      })),
+    })
+  } catch (error) {
+    next(error)
+  }
+})
+
 export default router
 

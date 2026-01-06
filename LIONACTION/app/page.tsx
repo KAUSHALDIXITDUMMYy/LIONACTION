@@ -16,7 +16,7 @@ import {
 
 import { AppLayout } from "@/components/app-layout"
 import { ProtectedRoute } from "@/components/protected-route"
-import { Button } from "@/components/ui/button"
+import { LiquidButton } from "@/components/animate-ui/components/buttons/liquid"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
 const oddsMovers = [
@@ -56,14 +56,14 @@ function HomeContent() {
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-3">
-                      <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90" asChild>
+                      <LiquidButton size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90" asChild>
                         <Link href="/odds" className="inline-flex items-center gap-2">
                           View Live Odds <ArrowRight className="w-4 h-4" />
                         </Link>
-                      </Button>
-                      <Button size="lg" variant="outline" className="border-border text-foreground">
+                      </LiquidButton>
+                      <LiquidButton size="lg" variant="outline" className="border-border text-foreground">
                         Build Custom Widget
-                      </Button>
+                      </LiquidButton>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       {[
@@ -162,11 +162,11 @@ function HomeContent() {
                   <CardTitle>Featured market</CardTitle>
                   <CardDescription>Premier League · Tomorrow, 8:00 PM</CardDescription>
                 </div>
-                <Button variant="outline" size="sm" asChild>
+                <LiquidButton variant="outline" size="sm" asChild>
                   <Link href="/odds" className="inline-flex items-center gap-2">
                     View market <ArrowRight className="w-4 h-4" />
                   </Link>
-                </Button>
+                </LiquidButton>
               </CardHeader>
               <CardContent className="grid md:grid-cols-3 gap-4">
                 {[
@@ -257,18 +257,18 @@ function HomeContent() {
                   <CardTitle>My favorite teams</CardTitle>
                   <CardDescription>Quick view of upcoming action</CardDescription>
                 </div>
-                <Button variant="ghost" size="sm" className="text-accent hover:text-accent">
+                <LiquidButton variant="ghost" size="sm" className="text-accent hover:text-accent">
                   Manage
-                </Button>
+                </LiquidButton>
               </CardHeader>
               <CardContent className="space-y-3">
                 {favoriteTeams.map((team) => (
                   <div key={team.name} className="rounded-lg border border-border/60 bg-card/70 px-3 py-2">
                     <p className="text-sm font-semibold">{team.name}</p>
                     <p className="text-xs text-muted-foreground">{team.next}</p>
-                    <Button variant="ghost" size="sm" className="px-0 text-accent hover:text-accent">
+                    <LiquidButton variant="ghost" size="sm" className="px-0 text-accent hover:text-accent">
                       See odds
-                    </Button>
+                    </LiquidButton>
                   </div>
                 ))}
               </CardContent>
@@ -280,9 +280,9 @@ function HomeContent() {
                   <CardTitle>Today&apos;s games</CardTitle>
                   <CardDescription>Fast filters for tonight</CardDescription>
                 </div>
-                <Button variant="outline" size="sm" asChild>
+                <LiquidButton variant="outline" size="sm" asChild>
                   <Link href="/odds">All markets</Link>
-                </Button>
+                </LiquidButton>
               </CardHeader>
               <CardContent className="space-y-3">
                 {todaysGames.map((game) => (

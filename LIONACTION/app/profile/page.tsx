@@ -6,7 +6,7 @@ import { ProtectedRoute } from "@/components/protected-route"
 import { useAuth } from "@/lib/auth-context"
 import { getApiUrl, getAuthHeaders } from "@/lib/utils"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { LiquidButton } from "@/components/animate-ui/components/buttons/liquid"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { User, Save, Loader2 } from "lucide-react"
@@ -178,7 +178,7 @@ function ProfileContent() {
             </div>
 
             <div className="flex justify-end gap-3 pt-4">
-              <Button
+              <LiquidButton
                 onClick={handleSave}
                 disabled={saving}
                 className="min-w-[120px]"
@@ -194,7 +194,7 @@ function ProfileContent() {
                     Save Changes
                   </>
                 )}
-              </Button>
+              </LiquidButton>
             </div>
           </CardContent>
         </Card>

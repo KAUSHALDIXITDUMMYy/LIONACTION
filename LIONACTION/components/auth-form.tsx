@@ -5,7 +5,7 @@ import type React from "react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
-import { Button } from "@/components/ui/button"
+import { LiquidButton } from "@/components/animate-ui/components/buttons/liquid"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
@@ -119,9 +119,9 @@ export function AuthForm({ type }: AuthFormProps) {
 
           {error && <div className="bg-destructive/10 text-destructive text-sm p-3 rounded">{error}</div>}
 
-          <Button type="submit" className="w-full" disabled={loading}>
+          <LiquidButton type="submit" className="w-full" disabled={loading}>
             {loading ? "Loading..." : isSignup ? "Create Account" : "Sign In"}
-          </Button>
+          </LiquidButton>
         </form>
 
         <div className="mt-4 relative">
@@ -133,7 +133,7 @@ export function AuthForm({ type }: AuthFormProps) {
           </div>
         </div>
 
-        <Button
+        <LiquidButton
           onClick={handleGoogleSignIn}
           variant="outline"
           className="w-full mt-4 bg-transparent"
@@ -158,7 +158,7 @@ export function AuthForm({ type }: AuthFormProps) {
             />
           </svg>
           Google
-        </Button>
+        </LiquidButton>
 
         <div className="mt-4 text-center text-sm">
           {isSignup ? (

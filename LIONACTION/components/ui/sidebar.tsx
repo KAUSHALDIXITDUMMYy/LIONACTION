@@ -7,7 +7,7 @@ import { PanelLeftIcon } from 'lucide-react'
 
 import { useIsMobile } from '@/hooks/use-mobile'
 import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
+import { LiquidButton } from '@/components/animate-ui/components/buttons/liquid'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import {
@@ -257,11 +257,11 @@ function SidebarTrigger({
   className,
   onClick,
   ...props
-}: React.ComponentProps<typeof Button>) {
+}: React.ComponentProps<typeof LiquidButton>) {
   const { toggleSidebar } = useSidebar()
 
   return (
-    <Button
+    <LiquidButton
       data-sidebar="trigger"
       data-slot="sidebar-trigger"
       variant="ghost"
@@ -275,7 +275,7 @@ function SidebarTrigger({
     >
       <PanelLeftIcon />
       <span className="sr-only">Toggle Sidebar</span>
-    </Button>
+    </LiquidButton>
   )
 }
 

@@ -3,7 +3,7 @@
 import { cva, type VariantProps } from 'class-variance-authority'
 
 import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
+import { LiquidButton } from '@/components/animate-ui/components/buttons/liquid'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 
@@ -102,10 +102,10 @@ function InputGroupButton({
   variant = 'ghost',
   size = 'xs',
   ...props
-}: Omit<React.ComponentProps<typeof Button>, 'size'> &
+}: Omit<React.ComponentProps<typeof LiquidButton>, 'size'> &
   VariantProps<typeof inputGroupButtonVariants>) {
   return (
-    <Button
+    <LiquidButton
       type={type}
       data-size={size}
       variant={variant}

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
+import { LiquidButton } from "@/components/animate-ui/components/buttons/liquid"
 import { Bookmark, BookmarkCheck, Loader2 } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { getApiUrl, getAuthHeaders } from "@/lib/utils"
@@ -103,7 +103,7 @@ export function SaveBetButton({
   }
 
   return (
-    <Button
+    <LiquidButton
       size="sm"
       variant="ghost"
       onClick={handleSave}
@@ -118,6 +118,6 @@ export function SaveBetButton({
       ) : (
         <Bookmark className="h-3 w-3" />
       )}
-    </Button>
+    </LiquidButton>
   )
 }

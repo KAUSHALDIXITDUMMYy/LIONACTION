@@ -79,3 +79,17 @@ CREATE INDEX IF NOT EXISTS idx_user_saved_bets_status ON user_saved_bets(status)
 CREATE INDEX IF NOT EXISTS idx_user_saved_bets_sport_key ON user_saved_bets(sport_key);
 CREATE INDEX IF NOT EXISTS idx_user_saved_bets_created_at ON user_saved_bets(created_at);
 CREATE INDEX IF NOT EXISTS idx_user_saved_bets_user_status ON user_saved_bets(user_id, status);
+
+-- User profiles table (for user settings)
+CREATE TABLE IF NOT EXISTS user_profiles (
+  id SERIAL PRIMARY KEY,
+  user_id VARCHAR(255) UNIQUE NOT NULL, -- Firebase UID
+  telegram_id VARCHAR(255), -- Telegram user ID or username
+  display_name VARCHAR(255), -- Optional display name
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- Indexes for performance
+CREATE INDEX IF NOT EXISTS idx_user_profiles_user_id ON user_profiles(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_profiles_telegram_id ON user_profiles(telegram_id);
